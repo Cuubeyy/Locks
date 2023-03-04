@@ -1,0 +1,12 @@
+name: Locks
+version: '${project.version}'
+main: de.cubedude.locks.Main
+api-version: 1.19
+prefix: Logs
+authors: [ CubeDude ]
+description: The Lock Mechanic for Game of Legends
+
+commands:
+  lock:
+    description: Gives the player a lock.
+    usage: /lock
