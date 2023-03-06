@@ -19,7 +19,7 @@ public final class Main extends JavaPlugin {
 
     private void startup_loader() {
         getServer().getPluginManager().registerEvents(new LockPlaceListener(config), this);
-        getServer().getPluginManager().registerEvents(new LockConfigurationListener(), this);
+        getServer().getPluginManager().registerEvents(new LockConfigurationListener(config), this);
 
         getCommand("lock").setExecutor(new LockCommand());
     }

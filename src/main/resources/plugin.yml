@@ -10,3 +10,4 @@ commands:
   lock:
     description: Gives the player a lock.
     usage: /lock
+    permission: locks.spawn_lock
