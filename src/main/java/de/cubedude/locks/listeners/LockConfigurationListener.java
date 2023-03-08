@@ -1,10 +1,10 @@
 package de.cubedude.locks.listeners;
 
+import de.cubedude.locks.inventorys.ConfigurationInventory;
 import de.cubedude.locks.utils.ConfigManager;
 import de.cubedude.locks.utils.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -14,7 +14,6 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,12 +36,12 @@ public class LockConfigurationListener implements Listener {
         ItemMeta meta = item.getItemMeta();
         List<String> lore = meta.getLore();
 
-        Inventory inventory = createInventory(player, lore, "");
+        Inventory inventory = ConfigurationInventory.createInventory(player, lore, player.getLocation(), 1);
         player.openInventory(inventory);
     }
 
     @EventHandler
-    public void onDoorInteract(PlayerInteractEvent event) {
+    public void onDoorConfigure(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK || !event.getPlayer().isSneaking() || event.getClickedBlock() == null || !Tag.DOORS.isTagged(event.getClickedBlock().getType())) return;
 
         Player player = event.getPlayer();
@@ -61,37 +60,10 @@ public class LockConfigurationListener implements Listener {
             return;
         }
 
-        Inventory inventory = createInventory(player, players, "" + location.hashCode());
+        Inventory inventory = ConfigurationInventory.createInventory(player, players, location, 2);
         player.openInventory(inventory);
 
         event.setCancelled(true);
-    }
-
-    public Inventory createInventory(Player player, List<String> lore, String mode) {
-        Inventory inventory = Bukkit.createInventory(null, 54, "Lock Configuration" + mode);
-
-        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-            if (onlinePlayer == player) continue;
-            assert lore != null;
-            ItemStack playerItem = getHead(onlinePlayer, lore);
-            inventory.addItem(playerItem);
-        }
-        return inventory;
-    }
-
-    public static ItemStack getHead(Player player, List<String> lockLore) {
-        ItemStack item = new ItemStack(Material.LEGACY_SKULL_ITEM, 1, (short) 3);
-        SkullMeta skull = (SkullMeta) item.getItemMeta();
-        skull.setDisplayName(player.getName());
-        if (lockLore.contains(player.getName())) {
-            skull.setLore(Collections.singletonList("Click to remove this player from the lock."));
-        } else {
-            skull.setLore(Collections.singletonList("Click to add this player to the lock."));
-        }
-
-        skull.setOwner(player.getName());
-        item.setItemMeta(skull);
-        return item;
     }
 
     @EventHandler
@@ -120,8 +92,6 @@ public class LockConfigurationListener implements Listener {
         } else {
             List<String> players = (List<String>) config.getConfig().get(path + ".owners");
             item = new ItemStack(Material.IRON_INGOT);
-            player.sendMessage(path);
-            player.sendMessage(players.get(0));
             item.setLore(players);
         }
 
