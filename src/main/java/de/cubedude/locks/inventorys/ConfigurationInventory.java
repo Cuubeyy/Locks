@@ -7,141 +7,110 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import sun.security.krb5.Config;
+import org.bukkit.inventory.meta.SkullMeta;
 
-import javax.swing.text.Position;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
-public class ConfigurationInventory implements Listener {
 
-    private final ConfigManager config;
+public class ConfigurationInventory {
 
-    public ConfigurationInventory(ConfigManager config) {
+    private Player player;
+    private ConfigManager config;
+    private Inventory inventory;
+    private Location location;
+
+    public ConfigurationInventory(ConfigManager config, Player player, Location location) {
         this.config = config;
+        this.location = location;
+        this.player = player;
+
+        inventory = createInventory();
     }
 
-    public static Inventory createInventory(Player player, List<String> lore, Location location, int mode) {
-        Inventory inventory = Bukkit.createInventory(null, 54, "Lock Configuration");
-
-        int numPlayers = Bukkit.getOnlinePlayers().size() - 1; // don't count the current player
-        int numPages = (int) Math.ceil((double) numPlayers / 45); // calculate the number of pages needed
-        int currentPage = 0; // start at the first page
-
-        // add the player heads to the inventory
-        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-            if (onlinePlayer == player) continue;
-            assert lore != null;
-            ItemStack skull = Getter.getPlayerHead(onlinePlayer);
-
-            if (lore.contains(player.getName())) {
-                skull.setLore(Collections.singletonList("Click to remove this player from the lock."));
-            } else {
-                skull.setLore(Collections.singletonList("Click to add this player to the lock."));
-            }
-            inventory.addItem(skull);
-        }
-
-        // add the navigation bar to the bottom row
-        ItemStack prevArrow = new ItemStack(Material.ARROW, 1);
-        ItemMeta prevMeta = prevArrow.getItemMeta();
-        prevMeta.setDisplayName("Previous Page");
-        prevArrow.setItemMeta(prevMeta);
-
-        ItemStack nextArrow = new ItemStack(Material.ARROW, 1);
-        ItemMeta nextMeta = nextArrow.getItemMeta();
-        nextMeta.setDisplayName("Next Page");
-        nextArrow.setItemMeta(nextMeta);
-
-        ItemStack infoDiamond = new ItemStack(Material.DIAMOND, 1);
-        ItemMeta infoMeta = nextArrow.getItemMeta();
-        infoMeta.setDisplayName("Info");
-        List<String> infoLore = new ArrayList<>();
-        if (mode == 1) {
-            infoLore.add("Bitte setzte das Schloss um mehr Infos zu sehen");
-        }
-        else if (mode == 2) {
-            infoLore.add("Das Schloss ist auf einer " + location.getBlock().getType() + ".");
-            infoLore.add("X: " + (int) location.x());
-            infoLore.add("Y: " + (int) location.y());
-            infoLore.add("Z: " + (int) location.z());
-        }
-        infoMeta.setLore(infoLore);
-        infoDiamond.setItemMeta(infoMeta);
-
-        ItemStack currentPageDisplay = new ItemStack(Material.GRAY_STAINED_GLASS_PANE, 1, (short) 7);
-        ItemMeta currentPageMeta = currentPageDisplay.getItemMeta();
-        currentPageMeta.setDisplayName("Page " + (currentPage + 1) + "/" + numPages);
-        currentPageDisplay.setItemMeta(currentPageMeta);
-
-        for (int i = 45; i < 54; i++) {
-            inventory.setItem(i, currentPageDisplay);
-        }
-        inventory.setItem(5*9+2, prevArrow);
-        inventory.setItem(5*9+6, nextArrow);
-        inventory.setItem(5*9+4, infoDiamond);
-
-        // return the inventory object
+    private Inventory createInventory() {
+        Inventory inventory = Bukkit.createInventory(null, InventoryType.CHEST, "Configuration");
+        inventory = fillInventory(inventory);
         return inventory;
     }
 
-    @EventHandler
-    public void onInventoryClick(InventoryClickEvent event) {
-        String path = "";
-        int mode;
-        if (event.getView().getTitle().equals("Lock Configuration")) mode = 1;
-        else if (event.getView().getTitle().startsWith("Lock Configuration")) {
-            path = event.getView().getTitle().replace("Lock Configuration", "");
-            mode = 2;
-        } else return;
-
-        Player player = (Player) event.getView().getPlayer();
-        ItemStack clickedItem = event.getCurrentItem();
-        ItemStack item;
-
-        if (clickedItem == null || clickedItem.getType() != Material.PLAYER_HEAD) {
-            event.setCancelled(true);
-            return;
+    private Inventory fillInventory(Inventory inv) {
+        for (int i = 18; i < 27; i++) {
+            ItemStack glass = new ItemStack(Material.GRAY_STAINED_GLASS_PANE, 1);
+            inv.setItem(i, glass);
         }
-        if (mode == 1) {
-            if (player.getInventory().getItemInMainHand().getType() == Material.IRON_INGOT &&
-                    player.getInventory().getItemInMainHand().getItemMeta().getDisplayName().equals(ChatColor.YELLOW + "Lock"))
-                item = player.getInventory().getItemInMainHand();
-            else item = player.getInventory().getItemInOffHand();
+
+        ItemStack infoItem = setLockInformation();
+        inv.setItem(22, infoItem);
+
+        inv = setPlayerHeads(inv, player);
+
+        return inv;
+    }
+
+    private Inventory setPlayerHeads(Inventory inv, Player playerToSkip) {
+        List<Player> players = (List<Player>) Bukkit.getServer().getOnlinePlayers();
+        int slot = 0;
+        for (Player player : players) {
+            if (player.equals(playerToSkip)) {
+                continue;
+            }
+            ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
+            SkullMeta skullMeta = (SkullMeta) skull.getItemMeta();
+            skullMeta.setOwningPlayer(player);
+            skullMeta.setDisplayName(player.getDisplayName());
+            if (inv.getItem(22) != null && inv.getItem(22).hasItemMeta()) {
+                ItemMeta itemMeta = inv.getItem(22).getItemMeta();
+                if (itemMeta.hasLore() && itemMeta.getLore().contains(player.getDisplayName())) {
+                    skullMeta.setLore(Arrays.asList("§cClick to remove the player from the lock"));
+                } else {
+                    skullMeta.setLore(Arrays.asList("§aClick to add the player to the lock"));
+                }
+            }
+            skull.setItemMeta(skullMeta);
+            inv.setItem(slot++, skull);
+            if (slot >= 18) {
+                break;
+            }
+        }
+        return inv;
+    }
+
+    private ItemStack setLockInformation() {
+        ItemStack item = new ItemStack(Material.DIAMOND, 1);
+        List<String> lore = new ArrayList<String>();
+
+        if (config.getConfig().contains("" + location.hashCode())) {
+            List<String> owners = (List<String>) config.getConfig().get(location.hashCode() + ".owners");
+            for (String owner : owners) {
+                owner = Getter.getPlayerFromUUID(owner).getDisplayName();
+                lore.add(owner);
+            }
+            lore.add("" + location.hashCode());
+
+            item.setLore(lore);
         } else {
-            List<String> players = (List<String>) config.getConfig().get(path + ".owners");
-            item = new ItemStack(Material.IRON_INGOT);
-            item.setLore(players);
+            List<String> owners = player.getItemInHand().getLore();
+            owners.remove(0);
+            for (String owner : owners) {
+                lore.add(owner);
+            }
+            lore.add("" + location.hashCode());
+
+            item.setLore(lore);
         }
 
-        List<String> lore = item.getLore();
-        String name = clickedItem.getItemMeta().getDisplayName();
+        return item;
+    }
 
-        assert lore != null;
-        if (lore.contains(name)) {
-            lore.remove(name);
-            clickedItem.setLore(Collections.singletonList("Click to add this player to the lock."));
-        }
-        else {
-            lore.add(name);
-            clickedItem.setLore(Collections.singletonList("Click to remove this player from the lock."));
-        }
-
-        item.setLore(lore);
-
-        if (mode == 2) {
-            config.getConfig().set(path + ".owners", item.getLore());
-        }
-
-        event.setCancelled(true);
+    public Inventory getInventory() {
+        return inventory;
     }
 }

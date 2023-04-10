@@ -34,17 +34,11 @@ public class LockPlaceListener implements Listener {
         Block block = event.getClickedBlock();
         ItemStack item = event.getItem();
 
-        if ((block == null || item == null || item.lore() == null) ||
-                (!Tag.DOORS.isTagged(block.getType()) && (block.getType() !=
-                Material.CHEST && block.getType() != Material.TRAPPED_CHEST)))
-            return;
-
-
+        if (event.getClickedBlock() == null || event.getItem() == null) return;
         if (item.getType() == Material.IRON_INGOT && item.getItemMeta().getDisplayName().equals(ChatColor.YELLOW + "Lock")) {
             Location location;
-            if (Tag.DOORS.isTagged(block.getType())) location = getter.getDoorLocation(block);
-            else location = getter.getChestLocations(block);
-
+            location = Getter.getClickedBlockLocation(block);
+            if (location == null) return;
             String path = "" + location.hashCode();
 
             if (config.getConfig().contains(path + ".X")) {
