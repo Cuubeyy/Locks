@@ -23,13 +23,17 @@ public class LockConfigurationListener implements Listener {
     @EventHandler
     private void openLockConfiguration(PlayerInteractEvent event) {
         Player player = event.getPlayer();
-        if (event.getItem() == null) return;
         if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getPlayer().isSneaking()) {
             ConfigurationInventory inventory = new ConfigurationInventory(config, player, Getter.getClickedBlockLocation(event.getClickedBlock()));
-            player.openInventory(inventory.getInventory());
-        } else if ((event.getAction() == Action.LEFT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_AIR) && event.getItem().getItemMeta().getDisplayName().equals(ChatColor.YELLOW + "Lock")) {
+            Inventory inv = inventory.getInventory();
+            if (inv == null) return;
+            player.openInventory(inv);
+            event.setCancelled(true);
+        } else if ((event.getAction() == Action.LEFT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_AIR) && event.getItem() != null) {
+            if (event.getItem().getItemMeta().getDisplayName().equals(ChatColor.YELLOW + "Lock")) return;
             ConfigurationInventory inventory = new ConfigurationInventory(config, player, player.getLocation());
-            player.openInventory(inventory.getInventory());
+            Inventory inv = inventory.getInventory();
+            if (inv == null) player.openInventory(inv);
         }
     }
 
