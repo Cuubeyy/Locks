@@ -38,7 +38,6 @@ public class ConfigurationInventory {
     private Inventory createInventory() {
         Inventory inventory = Bukkit.createInventory(null, InventoryType.CHEST, "Configuration");
         inventory = fillInventory(inventory);
-        if (inventory == null) return null;
         return inventory;
     }
 
@@ -51,9 +50,7 @@ public class ConfigurationInventory {
         ItemStack infoItem = setLockInformation();
         if (infoItem == null) return null;
         inv.setItem(22, infoItem);
-
         inv = setPlayerHeads(inv, player);
-
         return inv;
     }
 
@@ -99,14 +96,15 @@ public class ConfigurationInventory {
 
             item.setLore(lore);
         } else {
-            if (player.getItemInHand().getType() == Material.AIR) return null;
+            if (player.getItemInHand().getType() != Material.IRON_INGOT) {
+                return null;
+            }
             List<String> owners = player.getItemInHand().getLore();
             owners.remove(0);
             for (String owner : owners) {
                 lore.add(owner);
             }
             lore.add("" + location.hashCode());
-
             item.setLore(lore);
         }
         return item;
