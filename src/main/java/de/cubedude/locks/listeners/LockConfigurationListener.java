@@ -1,5 +1,6 @@
 package de.cubedude.locks.listeners;
 
+import de.cubedude.locks.commands.LockCommand;
 import de.cubedude.locks.inventorys.ConfigurationInventory;
 import de.cubedude.locks.utils.ConfigManager;
 import de.cubedude.locks.utils.Getter;
@@ -16,6 +17,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.ArrayList;
@@ -35,8 +37,10 @@ public class LockConfigurationListener implements Listener {
     private void openLockConfiguration(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getPlayer().isSneaking()) {
-            List<String> owners = (List<String>) config.getConfig().get(event.getClickedBlock().getLocation().hashCode() + ".owners");
-            if (!owners.contains(Getter.getUUID(player.getName()))) return;
+            if (!config.getConfig().contains(String.valueOf(Getter.getClickedBlockLocation(event.getClickedBlock()).hashCode()))) return;
+            String owner = (String) config.getConfig().get(Getter.getClickedBlockLocation(event.getClickedBlock()).hashCode() + ".owner");
+            if (owner == null) return;
+            if (!owner.equals(Getter.getUUID(player.getName()))) return;
             ConfigurationInventory inventory = new ConfigurationInventory(config, player, Getter.getClickedBlockLocation(event.getClickedBlock()));
             Inventory inv = inventory.getInventory();
             if (inv == null) return;
@@ -59,7 +63,20 @@ public class LockConfigurationListener implements Listener {
         String location = owners.get(owners.size()-1);
         owners.remove(owners.size()-1);
 
-        if (event.getRawSlot() >= 18 || event.getCurrentItem() == null) { event.setCancelled(true); return; }
+        if (event.getRawSlot() >= 19 || event.getCurrentItem() == null) { event.setCancelled(true); return; }
+
+        if (event.getCurrentItem().getType().equals(Material.BARRIER) && event.getRawSlot() == 18) {
+            ItemStack lockItem = LockCommand.generateLock((Player) event.getWhoClicked());
+
+            // Do something with the lockIngot, such as adding it to a player's inventory
+            event.getWhoClicked().getInventory().addItem(lockItem);
+            event.setCancelled(true);
+            event.getInventory().close();
+
+            config.getConfig().set(location, null);
+            config.saveConfig();
+            return;
+        }
 
         ItemStack skull = event.getCurrentItem();
         SkullMeta skullMeta = (SkullMeta) skull.getItemMeta();

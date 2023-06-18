@@ -28,15 +28,19 @@ public class LockCommand implements CommandExecutor {
             return true;
         }
 
-        // Give the player a new lock item
+        ItemStack lockItem = generateLock(player);
+        player.getInventory().setItemInMainHand(lockItem);
+
+        player.sendMessage("You have received a new lock.");
+        return true;
+    }
+
+    public static ItemStack generateLock(Player player) {
         ItemStack lockItem = new ItemStack(Material.IRON_INGOT);
         ItemMeta lockMeta = lockItem.getItemMeta();
         lockMeta.setDisplayName(ChatColor.YELLOW + "Lock");
         lockMeta.setLore(Arrays.asList(ChatColor.BOLD + "Owners:", player.getDisplayName()));
         lockItem.setItemMeta(lockMeta);
-        player.getInventory().setItemInMainHand(lockItem);
-
-        player.sendMessage("You have received a new lock.");
-        return true;
+        return lockItem;
     }
 }

@@ -56,6 +56,7 @@ public class LockPlaceListener implements Listener {
                     playerNames.add(getter.getUUID(user.trim()));
                 }
             }
+            config.getConfig().set(path + ".owner", playerNames.get(0));
             config.getConfig().set(path + ".owners", playerNames);
             config.saveConfig();
 

@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
@@ -14,10 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 
 public class ConfigurationInventory {
@@ -49,6 +47,8 @@ public class ConfigurationInventory {
 
         ItemStack infoItem = setLockInformation();
         if (infoItem == null) return null;
+        ItemStack removeItem = setRemoveItem();
+        if (removeItem != null) inv.setItem(18, removeItem);
         inv.setItem(22, infoItem);
         inv = setPlayerHeads(inv, player);
         return inv;
@@ -82,11 +82,21 @@ public class ConfigurationInventory {
         return inv;
     }
 
+    private ItemStack setRemoveItem() {
+        if (!config.getConfig().contains("" + location.hashCode())) return null;
+        ItemStack remove = new ItemStack(Material.BARRIER, 1);
+        ItemMeta removeMeta = remove.getItemMeta();
+        removeMeta.setDisplayName(ChatColor.RED + "Click here to remove the Lock");
+        remove.setItemMeta(removeMeta);
+        return remove;
+    }
+
     private ItemStack setLockInformation() {
         ItemStack item = new ItemStack(Material.DIAMOND, 1);
         List<String> lore = new ArrayList<String>();
 
         if (config.getConfig().contains("" + location.hashCode())) {
+
             List<String> owners = (List<String>) config.getConfig().get(location.hashCode() + ".owners");
             for (String owner : owners) {
                 owner = Getter.getPlayerFromUUID(owner).getDisplayName();
