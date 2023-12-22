@@ -29,7 +29,6 @@ public class ConfigurationInventory {
         this.config = config;
         this.location = location;
         this.player = player;
-
         inventory = createInventory();
     }
 
